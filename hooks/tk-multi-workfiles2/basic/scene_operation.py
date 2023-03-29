@@ -25,7 +25,11 @@ class SceneOperation(HookClass):
 
         :returns: A string, full path to a Premiere project.
         """
-        return os.path.join(engine.disk_location, "resources", "Untitled.prproj")
+        return os.path.join(
+            self.parent.engine.disk_location,
+            "resources",
+            "Untitled.prproj"
+        )
 
     def execute(self, operation, file_path, context, parent_action, file_version, read_only, **kwargs):
         """
@@ -84,7 +88,6 @@ class SceneOperation(HookClass):
 
         elif operation == "prepare_new":
             # Premiere seems to have no NewDocument(), so close/open is used instead.
-            shotgun = engine.context.tank.shotgun
             project_path = self.get_default_premiere_project()
             logger.debug("Opening default project %s" % project_path)
-            adobe.app.openDocument(prproj)
+            adobe.app.openDocument(project_path)

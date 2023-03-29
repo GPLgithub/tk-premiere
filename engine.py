@@ -12,7 +12,6 @@ import logging
 import os
 import re
 import glob
-import math
 import six
 import subprocess
 import sys
@@ -316,14 +315,13 @@ class PremiereEngine(sgtk.platform.Engine):
             return {"name": "Premiere", "version": "unknown"}
 
         version = six.ensure_text(self.adobe.app.version)
-        cc_version = version
         # app.version just returns 18.1.1 which is not what users see in the UI
         # extract a more meaningful version.
         # From the app path
         app_path = self.adobe.app.path.replace("\\", "/")
         # Look for a number after a space just before a slash
         # like in /Applications/Adobe Premiere Pro 2023/Adobe Premiere Pro 2023.app/
-        m = re.search(" (\d+)/", app_path)
+        m = re.search(r" (\d+)/", app_path)
         if m:
             version = m.group(1)
         else:
