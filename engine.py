@@ -28,15 +28,18 @@ from sgtk.util.filesystem import ensure_folder_exists
 
 class PremiereEngine(sgtk.platform.Engine):
     """
-    An Premiere CC engine for Shotgun Toolkit.
+    An Premiere CC engine for ShotGrid Toolkit.
+
+    Documentation for Premiere Pro ExtendScript api can be found here:
+    https://ppro-scripting.docsforadobe.dev/index.html
     """
 
     # the maximum size for a generated thumbnail
     MAX_THUMB_SIZE = 512
 
-    SHOTGUN_ADOBE_HEARTBEAT_INTERVAL = 1.0
-    SHOTGUN_ADOBE_HEARTBEAT_TOLERANCE = 20
-    SHOTGUN_ADOBE_NETWORK_DEBUG = ("SHOTGUN_ADOBE_NETWORK_DEBUG" in os.environ)
+    SG_ADOBE_HEARTBEAT_INTERVAL = 1.0
+    SG_ADOBE_HEARTBEAT_TOLERANCE = 20
+    SG_ADOBE_NETWORK_DEBUG = ("SG_ADOBE_NETWORK_DEBUG" in os.environ)
 
     TEST_SCRIPT_BASENAME = "run_tests.py"
 
@@ -147,7 +150,7 @@ class PremiereEngine(sgtk.platform.Engine):
             identifier=self.instance_name,
             port=self._SHOTGUN_ADOBE_PORT,
             logger=self.logger,
-            network_debug=self.SHOTGUN_ADOBE_NETWORK_DEBUG,
+            network_debug=self.SG_ADOBE_NETWORK_DEBUG,
         )
 
         self.logger.debug(
@@ -312,18 +315,25 @@ class PremiereEngine(sgtk.platform.Engine):
             # Don't error out if the bridge was not yet started
             return {"name": "Premiere", "version": "unknown"}
 
-        version = self.adobe.app.version
-        # app.premiere.PremiereVersion just returns 18.1.1 which is not what users see in the UI
-        # extract a more meaningful version from the systemInformation property
-        # which gives something like:
-        # Adobe Premiere Version: 2017.1.1 20170425.r.252 2017/04/25:23:00:00 CL 1113967  x64\rNumber of .....
-        # and use it instead if available.
-        m = re.search(r"([0-9]+[\.]?[0-9]*)", six.ensure_text(version))
+        version = six.ensure_text(self.adobe.app.version)
+        cc_version = version
+        # app.version just returns 18.1.1 which is not what users see in the UI
+        # extract a more meaningful version.
+        # From the app path
+        app_path = self.adobe.app.path.replace("\\", "/")
+        # Look for a number after a space just before a slash
+        # like in /Applications/Adobe Premiere Pro 2023/Adobe Premiere Pro 2023.app/
+        m = re.search(" (\d+)/", app_path)
         if m:
-            cc_version = self.__CC_VERSION_MAPPING.get(math.floor(float(m.group(1))), version)
+            version = m.group(1)
+        else:
+            # From our mapping
+            m = re.search(r"([0-9]+)[\.]?[0-9]*", version)
+            if m:
+                version = self.__CC_VERSION_MAPPING.get(int(m.group(1)), version)
         return {
             "name": "Premiere",
-            "version": cc_version,
+            "version": version,
         }
 
     ############################################################################
@@ -476,7 +486,7 @@ class PremiereEngine(sgtk.platform.Engine):
         try:
             self.adobe.ping()
         except Exception:
-            if self._FAILED_PINGS >= self.SHOTGUN_ADOBE_HEARTBEAT_TOLERANCE:
+            if self._FAILED_PINGS >= self.SG_ADOBE_HEARTBEAT_TOLERANCE:
                 from sgtk.platform.qt import QtCore
                 QtCore.QCoreApplication.instance().quit()
             else:
@@ -1306,7 +1316,7 @@ class PremiereEngine(sgtk.platform.Engine):
 
         # iterate over all the registered commands and gather the necessary info
         # to display them in adobe
-        for (command_name, command_info) in self.commands.iteritems():
+        for (command_name, command_info) in self.commands.items():
 
             # commands come with a dict of properties that may or may not
             # contain certain data.
@@ -1448,7 +1458,7 @@ class PremiereEngine(sgtk.platform.Engine):
 
             # The class variable is in seconds, so multiply to get milliseconds.
             timer.start(
-                self.SHOTGUN_ADOBE_HEARTBEAT_INTERVAL * 1000.0,
+                self.SG_ADOBE_HEARTBEAT_INTERVAL * 1000.0,
             )
 
             self._CHECK_CONNECTION_TIMER = timer
