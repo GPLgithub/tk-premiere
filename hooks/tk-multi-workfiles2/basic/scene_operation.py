@@ -14,32 +14,18 @@ import sgtk
 HookClass = sgtk.get_hook_baseclass()
 
 
-def get_default_premiere_project(shotgun):
-
-    filters = [
-        ['entity', 'is', {'type': 'CustomEntity02', 'id': 50}],
-        ['published_file_type', 'is', {'type': 'PublishedFileType', 'id': 208}]
-    ]
-
-    order = [{'field_name': 'version_number', 'direction': 'desc'}]
-
-    fields = ['name', 'path', 'version_number', 'task', 'sg_status_list', 'task.Task.step', 'published_file_type']
-
-    try:
-        data = shotgun.find('PublishedFile', filters=filters, fields=fields, order=order, limit=1)
-        if data:
-            return data[0]['path']['local_path']
-    except Exception:
-        pass
-
-    return None
-
-
 class SceneOperation(HookClass):
     """
-    Hook called to perform an operation with the
-    current scene
+    Hook called to perform an operation with the current scene.
     """
+
+    def get_default_premiere_project(self):
+        """
+        Can be overriden in derived hooks to provide a default Premiere project.
+
+        :returns: A string, full path to a Premiere project.
+        """
+        return os.path.join(engine.disk_location, "resources", "Untitled.prproj")
 
     def execute(self, operation, file_path, context, parent_action, file_version, read_only, **kwargs):
         """
@@ -97,13 +83,8 @@ class SceneOperation(HookClass):
             return True
 
         elif operation == "prepare_new":
-            # premiere seems to have no NewDocument(), so close/open is used instead.
-
-            # a shotgun project can have its own default *.prproj file
+            # Premiere seems to have no NewDocument(), so close/open is used instead.
             shotgun = engine.context.tank.shotgun
-            prproj = get_default_premiere_project(shotgun)
-            if prproj is None:
-                # fallback to predefined project file
-                prproj = os.path.join(engine.disk_location, "resources", "Untitled.prproj")
-
+            project_path = self.get_default_premiere_project()
+            logger.debug("Opening default project %s" % project_path)
             adobe.app.openDocument(prproj)
