@@ -17,11 +17,11 @@ HookClass = sgtk.get_hook_baseclass()
 def get_default_premiere_project(shotgun):
 
     filters = [
-                ['entity', 'is', {'type': 'CustomEntity02', 'id': 50}],
-                ['published_file_type', 'is', {'type': 'PublishedFileType', 'id':208}]
-            ]
+        ['entity', 'is', {'type': 'CustomEntity02', 'id': 50}],
+        ['published_file_type', 'is', {'type': 'PublishedFileType', 'id': 208}]
+    ]
 
-    order = [{'field_name': 'version_number', 'direction':'desc'}]
+    order = [{'field_name': 'version_number', 'direction': 'desc'}]
 
     fields = ['name', 'path', 'version_number', 'task', 'sg_status_list', 'task.Task.step', 'published_file_type']
 
@@ -29,7 +29,7 @@ def get_default_premiere_project(shotgun):
         data = shotgun.find('PublishedFile', filters=filters, fields=fields, order=order, limit=1)
         if data:
             return data[0]['path']['local_path']
-    except:
+    except Exception:
         pass
 
     return None
@@ -78,6 +78,7 @@ class SceneOperation(HookClass):
         engine = self.parent.engine
         adobe = engine.adobe
         logger = engine.logger
+        logger.info("Executing operation %s" % operation)
 
         if operation == "current_path":
             return adobe.app.project.path

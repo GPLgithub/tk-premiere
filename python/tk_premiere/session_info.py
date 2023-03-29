@@ -2,16 +2,16 @@
 class SessionInfo(object):
 
     def __init__(self, engine):
-       self._engine = engine
+        self._engine = engine
 
     def __get_transitions(self, track_items, timebase):
         items = list()
         for i in track_items:
             item = dict(
                 name=i.name,
-                duration=i.duration.ticks/timebase,
-                start=i.start.ticks/timebase,
-                end=i.end.ticks/timebase,
+                duration=i.duration.ticks / timebase,
+                start=i.start.ticks / timebase,
+                end=i.end.ticks / timebase,
                 mediaType=i.mediaType,
                 speed=i.getSpeed(),
             )
@@ -25,25 +25,24 @@ class SessionInfo(object):
         items = list()
 
         for i in track_items:
-            clip_name = i.name
-            
+
             getMediaPath_clip = i.projectItem.getMediaPath() if hasattr(i.projectItem, 'getMediaPath') else None
-            canChangeMediaPath = i.projectItem.canChangeMediaPath() if hasattr(i.projectItem, 'canChangeMediaPath') else None
+            # canChangeMediaPath = i.projectItem.canChangeMediaPath() if hasattr(i.projectItem, 'canChangeMediaPath') else None
 
             item = dict(
                 # shot_exists = shot_exists,
                 name=i.name,
-                duration=i.duration.ticks/timebase,
-                start=i.start.ticks/timebase,
-                end=i.end.ticks/timebase,
-                inPoint=i.inPoint.ticks/timebase,
-                outPoint=i.outPoint.ticks/timebase,
+                duration=i.duration.ticks / timebase,
+                start=i.start.ticks / timebase,
+                end=i.end.ticks / timebase,
+                inPoint=i.inPoint.ticks / timebase,
+                outPoint=i.outPoint.ticks / timebase,
                 mediaType=i.mediaType,
                 # sym_link_entity=sym_link_entity,
                 source_path_clip=getMediaPath_clip,
                 # canChangeMediaPath = canChangeMediaPath,
                 # videoComponents=videoComponents,
-                isSelected = i.isSelected(),
+                isSelected=i.isSelected(),
                 speed=i.getSpeed(),
                 isAdjustmentLayer=i.isAdjustmentLayer()
             )
@@ -72,16 +71,16 @@ class SessionInfo(object):
         active_seq = prj.activeSequence
         for s in project_sequences:
             # get info just for active sequence
-            if s.name == active_seq.name: 
+            if s.name == active_seq.name:
                 timebase = s.timebase
                 sequence = dict(
                     sequenceID=s.sequenceID,
                     name=s.name,
-                    inPoint=s.getInPointAsTime().ticks/timebase,
-                    outPoint=s.getOutPointAsTime().ticks/timebase,
+                    inPoint=s.getInPointAsTime().ticks / timebase,
+                    outPoint=s.getOutPointAsTime().ticks / timebase,
                     timebase=s.timebase,
-                    zeroPoint=s.zeroPoint/timebase,
-                    end=s.end/timebase,
+                    zeroPoint=s.zeroPoint / timebase,
+                    end=s.end / timebase,
                     videoTracks=self.__get_tracks(s.videoTracks, timebase),
                     audioTracks=self.__get_tracks(s.audioTracks, timebase)
                 )
@@ -91,12 +90,12 @@ class SessionInfo(object):
     def get_info(self):
         session_info = list()
         for p in self._engine.adobe.app.projects:
-                project = dict(
-                    documentID=p.documentID,
-                    name=p.name,
-                    path=p.path,
-                    sequences=self.__get_sequences(p.sequences),
-                    activeSequence=p.activeSequence
-                )
-                session_info.append(project)
+            project = dict(
+                documentID=p.documentID,
+                name=p.name,
+                path=p.path,
+                sequences=self.__get_sequences(p.sequences),
+                activeSequence=p.activeSequence
+            )
+            session_info.append(project)
         return session_info

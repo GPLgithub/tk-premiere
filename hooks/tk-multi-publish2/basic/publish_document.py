@@ -1,11 +1,11 @@
 # Copyright (c) 2019 Shotgun Software Inc.
-# 
+#
 # CONFIDENTIAL AND PROPRIETARY
-# 
-# This work is provided "AS IS" and subject to the Shotgun Pipeline Toolkit 
+#
+# This work is provided "AS IS" and subject to the Shotgun Pipeline Toolkit
 # Source Code License included in this distribution package. See LICENSE.
-# By accessing, using, copying or modifying this work you indicate your 
-# agreement to the Shotgun Pipeline Toolkit Source Code License. All rights 
+# By accessing, using, copying or modifying this work you indicate your
+# agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Shotgun Software Inc.
 import os
 
@@ -161,7 +161,7 @@ class PremiereProjectPublishPlugin(HookBaseClass):
         """
         path = self.parent.engine.project_path
 
-        # if a publish template is configured, disable context change. 
+        # if a publish template is configured, disable context change.
         if settings.get("Publish Template").value:
             item.context_change_allowed = False
 
@@ -362,7 +362,7 @@ class PremiereProjectPublishPlugin(HookBaseClass):
         engine = self.parent.engine
 
         # default save callback
-        callback = lambda: engine.save_as()
+        callback = engine.save_as
 
         # if workfiles2 is configured, use that for file save
         if "tk-multi-workfiles2" in engine.apps:
@@ -377,5 +377,3 @@ class PremiereProjectPublishPlugin(HookBaseClass):
                 "callback": callback
             }
         }
-
-

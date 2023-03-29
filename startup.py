@@ -33,8 +33,8 @@ class PremiereLauncher(SoftwareLauncher):
     # strings, these allow us to alter the regex matching for any of the
     # variable components of the path in one place
     COMPONENT_REGEX_LOOKUP = {
-        "version": "[\d.]+",
-        "version_back": "[\d.]+",  # backreference to ensure same version
+        "version": r"[\d.]+",
+        "version_back": r"[\d.]+",  # backreference to ensure same version
     }
 
     # This dictionary defines a list of executable template strings for each
@@ -44,8 +44,14 @@ class PremiereLauncher(SoftwareLauncher):
     # install path on a given OS for a new release, a new template will need
     # to be added here.
     EXECUTABLE_MATCH_TEMPLATES = {
-        "darwin": "/Applications/Adobe Premiere Pro CC {version}/Adobe Premiere Pro CC {version_back}.app",
-        "win32": "C:/Program Files/Adobe/Adobe Premiere Pro CC {version}/Adobe Premiere Pro.exe"
+        "darwin": [
+            "/Applications/Adobe Premiere Pro CC {version}/Adobe Premiere Pro CC {version_back}.app",
+            "/Applications/Adobe Premiere Pro {version}/Adobe Premiere Pro {version_back}.app",
+        ],
+        "win32": [
+            "C:/Program Files/Adobe/Adobe Premiere Pro {version}/Adobe Premiere Pro.exe",
+            "C:/Program Files/Adobe/Adobe Premiere Pro {version}/Adobe Premiere Pro.exe",
+        ],
     }
 
     @property
@@ -98,31 +104,33 @@ class PremiereLauncher(SoftwareLauncher):
             self.logger.debug("Premiere not supported on this platform.")
             return []
 
+        executable_templates = self.EXECUTABLE_MATCH_TEMPLATES[sys.platform]
         all_sw_versions = []
+        for executable_template in executable_templates:
+            for executable_path, tokens in self._glob_and_match(
+                executable_template,
+                self.COMPONENT_REGEX_LOOKUP
+            ):
+                self.logger.debug(
+                    "Processing %s with tokens %s",
+                    executable_path,
+                    tokens
+                )
+                # extract the components (default to None if not included). but
+                # version is in all templates, so should be there.
+                executable_version = tokens.get("version")
 
-        for executable_path, tokens in self._glob_and_match(
-                self.EXECUTABLE_MATCH_TEMPLATES[sys.platform],
-                self.COMPONENT_REGEX_LOOKUP):
-            self.logger.debug(
-                "Processing %s with tokens %s",
-                executable_path,
-                tokens
-            )
-            # extract the components (default to None if not included). but
-            # version is in all templates, so should be there.
-            executable_version = tokens.get("version")
-
-            sw_version = SoftwareVersion(
-                executable_version,
-                "Premiere CC",
-                executable_path,
-                icon_path
-            )
-            supported, reason = self._is_supported(sw_version)
-            if supported:
-                all_sw_versions.append(sw_version)
-            else:
-                self.logger.debug(reason)
+                sw_version = SoftwareVersion(
+                    executable_version,
+                    "Premiere CC",
+                    executable_path,
+                    icon_path
+                )
+                supported, reason = self._is_supported(sw_version)
+                if supported:
+                    all_sw_versions.append(sw_version)
+                else:
+                    self.logger.debug(reason)
 
         return all_sw_versions
 

@@ -121,4 +121,3 @@ class PremiereSceneCollector(HookBaseClass):
             project_item.properties["work_template"] = work_template
             self.logger.debug("Work template defined for Premiere collection.")
         return project_item
-

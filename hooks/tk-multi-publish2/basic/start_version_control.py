@@ -293,7 +293,7 @@ class PremiereStartVersionControlPlugin(HookBaseClass):
         engine = self.parent.engine
 
         # default save callback
-        callback = lambda: engine.save_as()
+        callback = engine.save_as
 
         # if workfiles2 is configured, use that for file save
         if "tk-multi-workfiles2" in engine.apps:
@@ -320,5 +320,3 @@ class PremiereStartVersionControlPlugin(HookBaseClass):
                 "url": "https://support.shotgunsoftware.com/hc/en-us/articles/115000068574-User-Guide-WIP-#What%20happens%20when%20you%20publish"
             }
         }
-
-
