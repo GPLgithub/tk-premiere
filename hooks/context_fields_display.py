@@ -537,5 +537,3 @@ class ContextFieldsDisplay(HookBaseClass):
             self.parent.sgtk.shotgun_url, entity["type"], entity["id"])
 
         return self.parent.get_panel_link(url, text)
-
-

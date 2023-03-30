@@ -12,7 +12,7 @@ import logging
 import os
 import re
 import glob
-import math
+import six
 import subprocess
 import sys
 import threading
@@ -27,15 +27,18 @@ from sgtk.util.filesystem import ensure_folder_exists
 
 class PremiereEngine(sgtk.platform.Engine):
     """
-    An Premiere CC engine for Shotgun Toolkit.
+    An Premiere CC engine for ShotGrid Toolkit.
+
+    Documentation for Premiere Pro ExtendScript api can be found here:
+    https://ppro-scripting.docsforadobe.dev/index.html
     """
 
     # the maximum size for a generated thumbnail
     MAX_THUMB_SIZE = 512
 
-    SHOTGUN_ADOBE_HEARTBEAT_INTERVAL = 1.0
-    SHOTGUN_ADOBE_HEARTBEAT_TOLERANCE = 20
-    SHOTGUN_ADOBE_NETWORK_DEBUG = ("SHOTGUN_ADOBE_NETWORK_DEBUG" in os.environ)
+    SG_ADOBE_HEARTBEAT_INTERVAL = 1.0
+    SG_ADOBE_HEARTBEAT_TOLERANCE = 20
+    SG_ADOBE_NETWORK_DEBUG = ("SG_ADOBE_NETWORK_DEBUG" in os.environ)
 
     TEST_SCRIPT_BASENAME = "run_tests.py"
 
@@ -63,7 +66,7 @@ class PremiereEngine(sgtk.platform.Engine):
     _PROJECT_CONTEXT = None
     _AFX_PID = None
     _POPUP_CACHE = None
-    _AFX_WIN32_DIALOG_WINDOW_CLASS = "#32770" # the windows window class name used by Premiere for modal dialogs
+    _AFX_WIN32_DIALOG_WINDOW_CLASS = "#32770"  # the windows window class name used by Premiere for modal dialogs
     __WIN32_GW_CHILD = 5
     _CONTEXT_CACHE_KEY = "premiere_context_cache"
 
@@ -77,7 +80,7 @@ class PremiereEngine(sgtk.platform.Engine):
         16: "2019"
     }
 
-    __IS_SEQUENCE_REGEX = re.compile(u"[\[]?([#@]+|[%]0\dd)[\]]?")
+    __IS_SEQUENCE_REGEX = re.compile(r"[\[]?([#@]+|[%]0\dd)[\]]?")
 
     ############################################################################
     # context changing
@@ -146,7 +149,7 @@ class PremiereEngine(sgtk.platform.Engine):
             identifier=self.instance_name,
             port=self._SHOTGUN_ADOBE_PORT,
             logger=self.logger,
-            network_debug=self.SHOTGUN_ADOBE_NETWORK_DEBUG,
+            network_debug=self.SG_ADOBE_NETWORK_DEBUG,
         )
 
         self.logger.debug(
@@ -311,18 +314,24 @@ class PremiereEngine(sgtk.platform.Engine):
             # Don't error out if the bridge was not yet started
             return {"name": "Premiere", "version": "unknown"}
 
-        version = self.adobe.app.version
-        # app.premiere.PremiereVersion just returns 18.1.1 which is not what users see in the UI
-        # extract a more meaningful version from the systemInformation property
-        # which gives something like:
-        # Adobe Premiere Version: 2017.1.1 20170425.r.252 2017/04/25:23:00:00 CL 1113967  x64\rNumber of .....
-        # and use it instead if available.
-        m = re.search("([0-9]+[\.]?[0-9]*)", unicode(version))
+        version = six.ensure_text(self.adobe.app.version)
+        # app.version just returns 18.1.1 which is not what users see in the UI
+        # extract a more meaningful version.
+        # From the app path
+        app_path = self.adobe.app.path.replace("\\", "/")
+        # Look for a number after a space just before a slash
+        # like in /Applications/Adobe Premiere Pro 2023/Adobe Premiere Pro 2023.app/
+        m = re.search(r" (\d+)/", app_path)
         if m:
-            cc_version = self.__CC_VERSION_MAPPING.get(math.floor(float(m.group(1))), version)
+            version = m.group(1)
+        else:
+            # From our mapping
+            m = re.search(r"([0-9]+)[\.]?[0-9]*", version)
+            if m:
+                version = self.__CC_VERSION_MAPPING.get(int(m.group(1)), version)
         return {
             "name": "Premiere",
-            "version": cc_version,
+            "version": version,
         }
 
     ############################################################################
@@ -475,7 +484,7 @@ class PremiereEngine(sgtk.platform.Engine):
         try:
             self.adobe.ping()
         except Exception:
-            if self._FAILED_PINGS >= self.SHOTGUN_ADOBE_HEARTBEAT_TOLERANCE:
+            if self._FAILED_PINGS >= self.SG_ADOBE_HEARTBEAT_TOLERANCE:
                 from sgtk.platform.qt import QtCore
                 QtCore.QCoreApplication.instance().quit()
             else:
@@ -582,8 +591,8 @@ class PremiereEngine(sgtk.platform.Engine):
         # Make sure we have a properly-encoded string for the path. We can
         # possibly get a file path/name that contains unicode, and we don't
         # want to deal with that later on.
-        if isinstance(active_document_path, unicode):
-            active_document_path = active_document_path.encode("utf-8")
+        if isinstance(active_document_path, six.text_type):
+            active_document_path = six.ensure_str(active_document_path)
 
         # This will be True if the context_changes_disabled context manager is
         # used. We're just in a temporary state of not allowing context changes,
@@ -808,7 +817,7 @@ class PremiereEngine(sgtk.platform.Engine):
         try:
             self.logger.debug("Pausing heartbeat...")
             self._HEARTBEAT_DISABLED = True
-        except Exception, e:
+        except Exception as e:
             self.logger.debug("Unable to pause heartbeat as requested.")
             self.logger.error(str(e))
         else:
@@ -931,10 +940,10 @@ class PremiereEngine(sgtk.platform.Engine):
             # with the process id of Premiere, we can get all HWNDS that point to
             # dialog classes.
             hwnds = self.__tk_premiere.win_32_api.find_windows(
-                                process_id=self._AFX_PID,
-                                class_name=self._AFX_WIN32_DIALOG_WINDOW_CLASS,
-                                stop_if_found=True,
-                            )
+                process_id=self._AFX_PID,
+                class_name=self._AFX_WIN32_DIALOG_WINDOW_CLASS,
+                stop_if_found=True,
+            )
 
             # To avoid raising a dialog, that we raised before,
             # we will compare the list of visible dialog-hwnds with the list
@@ -975,7 +984,7 @@ class PremiereEngine(sgtk.platform.Engine):
         """
         if not self._WIN32_AFTEREFFECTS_MAIN_HWND:
             for major in sorted(self.__CC_VERSION_MAPPING.keys()):
-                for minor in xrange(10):
+                for minor in six.range(10):
                     found_hwnds = self.__tk_premiere.win_32_api.find_windows(
                         class_name="Premiere Pro",
                         stop_if_found=True,
@@ -1305,7 +1314,7 @@ class PremiereEngine(sgtk.platform.Engine):
 
         # iterate over all the registered commands and gather the necessary info
         # to display them in adobe
-        for (command_name, command_info) in self.commands.iteritems():
+        for (command_name, command_info) in self.commands.items():
 
             # commands come with a dict of properties that may or may not
             # contain certain data.
@@ -1352,11 +1361,11 @@ class PremiereEngine(sgtk.platform.Engine):
         jump_commands = []
 
         # the icon to use for the command. bundled with the engine
-        sg_icon = os.path.join(
-            self.disk_location,
-            "resources",
-            "shotgun_logo.png"
-        )
+        # sg_icon = os.path.join(
+        #     self.disk_location,
+        #     "resources",
+        #     "shotgun_logo.png"
+        # )
 
         # jump_commands.append(
         #     dict(
@@ -1447,7 +1456,7 @@ class PremiereEngine(sgtk.platform.Engine):
 
             # The class variable is in seconds, so multiply to get milliseconds.
             timer.start(
-                self.SHOTGUN_ADOBE_HEARTBEAT_INTERVAL * 1000.0,
+                self.SG_ADOBE_HEARTBEAT_INTERVAL * 1000.0,
             )
 
             self._CHECK_CONNECTION_TIMER = timer
@@ -1731,4 +1740,3 @@ class PremiereEngine(sgtk.platform.Engine):
                 self.logger.error("Could not activate python.")
         elif sys.platform == "win32":
             pass
-            
