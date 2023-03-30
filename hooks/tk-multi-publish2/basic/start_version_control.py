@@ -141,12 +141,12 @@ class PremiereStartVersionControlPlugin(HookBaseClass):
             # validation will succeed.
             self.logger.warn(
                 "Premiere project has not been saved.",
-                extra=self.__get_save_as_action()
+                extra=self._get_save_as_action()
             )
 
         self.logger.info(
             "Premiere '%s' plugin accepted the project." % self.name,
-            extra=self.__get_version_docs_action()
+            extra=self._get_version_docs_action()
         )
 
         # accept the plugin, but don't force the user to add a version number
@@ -179,7 +179,7 @@ class PremiereStartVersionControlPlugin(HookBaseClass):
             error_msg = "The Premiere project has not been saved."
             self.logger.error(
                 error_msg,
-                extra=self.__get_save_as_action()
+                extra=self._get_save_as_action()
             )
             raise Exception(error_msg)
 
@@ -196,7 +196,7 @@ class PremiereStartVersionControlPlugin(HookBaseClass):
                         "choose another name."
             self.logger.error(
                 error_msg,
-                extra=self.__get_save_as_action()
+                extra=self._get_save_as_action()
             )
             raise Exception(error_msg)
 
@@ -266,26 +266,22 @@ class PremiereStartVersionControlPlugin(HookBaseClass):
         work_template = item.properties.get("work_template")
         if work_template:
             if work_template.validate(path):
-                self.logger.debug(
-                    "Using work template to determine version number.")
+                self.logger.debug("Using work template to determine version number.")
                 work_fields = work_template.get_fields(path)
                 if "version" in work_fields:
                     version_number = work_fields.get("version")
             else:
-                self.logger.debug(
-                    "Work template did not match path")
+                self.logger.debug("Work template did not match path")
         else:
-            self.logger.debug(
-                "Work template unavailable for version extraction.")
+            self.logger.debug("Work template unavailable for version extraction.")
 
         if version_number is None:
-            self.logger.debug(
-                "Using path info hook to determine version number.")
+            self.logger.debug("Using path info hook to determine version number.")
             version_number = publisher.util.get_version_number(path)
 
         return version_number
 
-    def __get_save_as_action(self):
+    def _get_save_as_action(self):
         """
         Simple helper for returning a log action dict for saving the project
         """
@@ -309,7 +305,7 @@ class PremiereStartVersionControlPlugin(HookBaseClass):
             }
         }
 
-    def __get_version_docs_action(self):
+    def _get_version_docs_action(self):
         """
         Simple helper for returning a log action to show version docs
         """
