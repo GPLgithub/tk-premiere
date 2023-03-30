@@ -104,8 +104,7 @@ class PremiereProjectPublishPlugin(HookBaseClass):
         """
 
         # inherit the settings from the base publish plugin
-        base_settings = \
-            super(PremiereProjectPublishPlugin, self).settings or {}
+        base_settings = super(PremiereProjectPublishPlugin, self).settings or {}
 
         # settings specific to this class
         premiere_publish_settings = {
@@ -171,13 +170,11 @@ class PremiereProjectPublishPlugin(HookBaseClass):
             # validation will succeed.
             self.logger.warn(
                 "The Premiere project has not been saved.",
-                extra=self.__get_save_as_action()
+                extra=self._get_save_as_action()
             )
 
-        self.logger.info(
-            "Premiere '%s' plugin accepted." %
-            (self.name,)
-        )
+        self.logger.debug("Premiere '%s' plugin accepted." % self.name)
+
         return {
             "accepted": True,
             "checked": True
@@ -203,11 +200,10 @@ class PremiereProjectPublishPlugin(HookBaseClass):
         if not path:
             # the project still requires saving. provide a save button.
             # validation fails.
-            error_msg = "The Premiere project '%s' has not been saved." % \
-                        (item.name,)
+            error_msg = "The Premiere project '%s' has not been saved." % item.name
             self.logger.error(
                 error_msg,
-                extra=self.__get_save_as_action()
+                extra=self._get_save_as_action()
             )
             raise ProjectUnsavedError(error_msg)
 
@@ -233,13 +229,12 @@ class PremiereProjectPublishPlugin(HookBaseClass):
                             "tooltip": "Save the current Premiere project"
                                        "to a different file name",
                             # will launch wf2 if configured
-                            "callback": self.__get_save_as_action()
+                            "callback": self._get_save_as_action()
                         }
                     }
                 )
             else:
-                self.logger.debug(
-                    "Work template configured and matches project path.")
+                self.logger.debug("Work template configured and matches project path.")
         else:
             self.logger.debug("No work template configured.")
 
@@ -248,15 +243,13 @@ class PremiereProjectPublishPlugin(HookBaseClass):
         # check to see if the next version of the work file already exists on
         # disk. if so, warn the user and provide the ability to jump to save
         # to that version now
-        (next_version_path, version) = self._get_next_version_info(path,
-                                                                   item)
+        (next_version_path, version) = self._get_next_version_info(path, item)
         if next_version_path and os.path.exists(next_version_path):
 
             # determine the next available version_number. just keep asking for
             # the next one until we get one that doesn't exist.
             while os.path.exists(next_version_path):
-                (next_version_path, version) = self._get_next_version_info(
-                    next_version_path, item)
+                next_version_path, version = self._get_next_version_info(next_version_path, item)
 
             error_msg = "The next version of this file already exists on disk."
             self.logger.error(
@@ -276,8 +269,7 @@ class PremiereProjectPublishPlugin(HookBaseClass):
 
         # populate the publish template on the item if found
         publish_template_setting = settings.get("Publish Template")
-        publish_template = self.parent.engine.get_template_by_name(
-            publish_template_setting.value)
+        publish_template = self.parent.engine.get_template_by_name(publish_template_setting.value)
         if publish_template:
             item.properties["publish_template"] = publish_template
 
@@ -288,8 +280,7 @@ class PremiereProjectPublishPlugin(HookBaseClass):
         item.properties["path"] = path
 
         # run the base class validation
-        return super(PremiereProjectPublishPlugin, self).validate(
-            settings, item)
+        return super(PremiereProjectPublishPlugin, self).validate(settings, item)
 
     def publish(self, settings, item):
         """
@@ -339,7 +330,7 @@ class PremiereProjectPublishPlugin(HookBaseClass):
         self._save_to_next_version(
             path,
             item,
-            lambda path, e=self.parent.engine: e.save(path)
+            lambda path: self.parent.engine.save(path)
         )
 
     def _get_version_entity(self, item):
@@ -354,7 +345,7 @@ class PremiereProjectPublishPlugin(HookBaseClass):
         else:
             return None
 
-    def __get_save_as_action(self):
+    def _get_save_as_action(self):
         """
         Simple helper for returning a log action dict for saving the project
         """
