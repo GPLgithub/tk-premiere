@@ -41,6 +41,12 @@ class PremiereItem(object):
         """
         return self._item
 
+    @property
+    def name(self):
+        """
+        """
+        return self._item.name
+
 
 class PremiereProject(PremiereItem):
     """
@@ -76,12 +82,6 @@ class PremiereProject(PremiereItem):
         """
         """
         return self._item.path
-
-    @property
-    def name(self):
-        """
-        """
-        return self._item.name
 
     @property
     def bins(self):
@@ -150,4 +150,20 @@ class PremiereBin(PremiereItem):
             child = self._item.children[i]
             # Sequences are clips as well.
             if child.type == ItemType.CLIP and not child.isSequence():
-                yield child
+                yield PremiereClip(child)
+
+class PremiereClip(PremiereItem):
+    """
+    A class to handle Premiere clips.
+    """
+    def __init__(self, clip):
+        super(PremiereClip, self).__init__(clip)
+
+    @property
+    def media_path(self):
+        """
+        Returns the media path associated with this clip.
+
+        :returns: A string.
+        """
+        return self._item.getMediaPath()

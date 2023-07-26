@@ -17,7 +17,6 @@ HookBaseClass = sgtk.get_hook_baseclass()
 class BreakdownSceneOperations(HookBaseClass):
     """
     Breakdown operations for Adode Premiere.
-
     """
 
     def scan_scene(self):
@@ -42,41 +41,27 @@ class BreakdownSceneOperations(HookBaseClass):
         a published file and try to determine if there is a more recent version
         available. Any such versions are then displayed in the UI as out of date.
         """
+        self.logger.info("Scanning...")
         refs = []
-        engine = self.parent.engine
-        current_project = engine.current_project
-        if not current_project:
-            self.logger.debug("No current project, skipping...")
+        try:
+            engine = self.parent.engine
+            current_project = engine.current_project
+            if not current_project:
+                self.logger.info("No current project, skipping...")
+                return refs
+            for clip in current_project.clips:
+                refs.append(
+                    {
+                        "node_name": clip.name,
+                        "node_type": "clip",
+                        "path": clip.media_path
+                    }
+                )
+            self.logger.info("Refs found: %s" % refs)
             return refs
-        clips = current_project.clips
-#        # first let's look at maya references
-#        for ref in cmds.file(query=True, reference=True):
-#            node_name = cmds.referenceQuery(ref, referenceNode=True)
-#
-#            # get the path and make it platform dependent
-#            # (maya uses C:/style/paths)
-#            maya_path = cmds.referenceQuery(
-#                ref, filename=True, withoutCopyNumber=True
-#            ).replace("/", os.path.sep)
-#            refs.append(
-#                {"node_name": node_name, "node_type": "reference", "path": maya_path}
-#            )
-#
-#        # now look at file texture nodes
-#        for file_node in cmds.ls(l=True, type="file"):
-#            # ensure this is actually part of this scene and not referenced
-#            if cmds.referenceQuery(file_node, isNodeReferenced=True):
-#                # this is embedded in another reference, so don't include it in the breakdown
-#                continue
-#
-#            # get path and make it platform dependent (maya uses C:/style/paths)
-#            path = cmds.getAttr("%s.fileTextureName" % file_node).replace(
-#                "/", os.path.sep
-#            )
-#
-#            refs.append({"node_name": file_node, "node_type": "file", "path": path})
-
-        return refs
+        except Exception as e:
+            self.logger.exception(e)
+            raise
 
     def update(self, item):
         """

@@ -356,12 +356,12 @@ class PremiereEngine(sgtk.platform.Engine):
         """
         Get the active project filepath.
 
-        :returns: The current project path or an empty string
-        :rtype: str
+        :returns: The current project path or ``None``.
         """
-        if self.adobe.app.project.path[0:4] == '\\\\?\\':
-            return self.adobe.app.project.path[4:]
-        return self.adobe.app.project.path
+        current_project = self.current_project
+        if current_project:
+            return current_project.path
+        return None
 
     def save(self, path=None):
         """
