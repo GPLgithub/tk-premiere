@@ -338,6 +338,20 @@ class PremiereEngine(sgtk.platform.Engine):
     # engine host interaction methods
 
     @property
+    def current_project(self):
+        """
+        Return the current Premiere project, if any.
+
+        :returns: A :class:`PremiereProject` or ``None``.
+        """
+        try:
+            payload = self.import_module("tk_premiere")
+            return payload.PremiereProject.get_current_project()
+        except Exception as e:
+            self.logger.exception(e)
+        return None
+
+    @property
     def project_path(self):
         """
         Get the active project filepath.

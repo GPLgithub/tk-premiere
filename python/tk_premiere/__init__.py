@@ -9,23 +9,17 @@ import sys
 import sgtk
 
 from .session_info import SessionInfo
-
+from .project import PremiereProject
 
 adobe_bridge = sgtk.platform.import_framework(
     "tk-framework-adobe",
     "tk_framework_adobe.adobe_bridge"
 )
-
-
 AdobeBridge = adobe_bridge.AdobeBridge
 
 
 shotgun_data = sgtk.platform.import_framework("tk-framework-shotgunutils", "shotgun_data")
-
-
 shotgun_globals = sgtk.platform.import_framework("tk-framework-shotgunutils", "shotgun_globals")
-
-
 shotgun_settings = sgtk.platform.import_framework("tk-framework-shotgunutils", "settings")
 
 

@@ -42,9 +42,13 @@ class BreakdownSceneOperations(HookBaseClass):
         a published file and try to determine if there is a more recent version
         available. Any such versions are then displayed in the UI as out of date.
         """
-
         refs = []
-
+        engine = self.parent.engine
+        current_project = engine.current_project
+        if not current_project:
+            self.logger.debug("No current project, skipping...")
+            return refs
+        clips = current_project.clips
 #        # first let's look at maya references
 #        for ref in cmds.file(query=True, reference=True):
 #            node_name = cmds.referenceQuery(ref, referenceNode=True)
