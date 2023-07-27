@@ -54,7 +54,7 @@ class BreakdownSceneOperations(HookBaseClass):
                     {
                         "node_name": clip.name,
                         "node_type": "clip",
-                        "path": clip.media_path
+                        "path": clip.media_path,
                     }
                 )
             self.logger.info("Refs found: %s" % refs)
