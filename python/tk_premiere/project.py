@@ -44,9 +44,20 @@ class PremiereItem(object):
     @property
     def name(self):
         """
+        Return the name of this item.
+
+        :returns: A string.
         """
         return self._item.name
 
+    @property
+    def node_id(self):
+        """
+        Return the internal ID of the Premiere object.
+
+        :returns: A string.
+        """
+        return self._item.nodeId
 
 class PremiereProject(PremiereItem):
     """
@@ -84,9 +95,18 @@ class PremiereProject(PremiereItem):
         return self._item.path
 
     @property
+    def node_id(self):
+        """
+        Return the internal ID of the Premiere Project root item.
+        """
+        return self._item.rootItem.nodeId
+
+    @property
     def bins(self):
         """
+        Iterate over all bins in this project.
 
+        :yields: :class:`PremiereBin`.
         """
         # The top project item is also a bin.
         bins = [self._item.rootItem]
@@ -120,6 +140,17 @@ class PremiereProject(PremiereItem):
         for sequence in self._item.sequences:
             yield PremiereTimeline(sequence)
 
+
+    def get_clip_by_id(self, node_id):
+        """
+        Return the clip with the given node id.
+
+        :returns: A :class:`PremiereClip` or ``None``.
+        """
+        for clip in self.clips:
+            if clip.node_id == node_id:
+                return clip
+        return None
 
 class PremiereTimeline(PremiereItem):
     """
@@ -167,3 +198,12 @@ class PremiereClip(PremiereItem):
         :returns: A string.
         """
         return self._item.getMediaPath()
+
+    @media_path.setter
+    def media_path(self, path):
+        """
+        Set the media path associated with this clip.
+        """
+        if not self._item.canChangeMediaPath():
+            raise ValueError("Media path can't be changed on %s" % self.name)
+        self._item.changeMediaPath(path)
