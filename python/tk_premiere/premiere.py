@@ -195,7 +195,7 @@ class PremiereTimeline(PremiereItem):
         Instantiate a PremiereTimeline.
 
         ..see:: https://ppro-scripting.docsforadobe.dev/sequence/sequence.html
-        
+
         :param timeline: A Premiere Sequence object returned by the Adobe integration
                         as a :class:`ProxyWrapper`.
         """
