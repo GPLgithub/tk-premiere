@@ -22,7 +22,6 @@ from contextlib import contextmanager
 
 
 import sgtk
-from sgtk.util.filesystem import ensure_folder_exists
 
 
 class PremiereEngine(sgtk.platform.Engine):
@@ -369,16 +368,11 @@ class PremiereEngine(sgtk.platform.Engine):
 
         :param str path: The target file path. optional.
         """
-
+        if not self.current_project:
+            self.logger.info("No current project, skipping...")
+            return
         with self.context_changes_disabled():
-
-            if path is None:
-                self.adobe.app.project.save()
-            else:
-                # Premiere won't ensure that the folder is created when saving, so we must make sure it exists
-                ensure_folder_exists(os.path.dirname(path))
-                self.adobe.app.project.saveAs(path)
-            new_path = self.project_path
+            new_path = self.current_project.save(path)
             self.logger.info("Saved file to to {!r}".format(new_path))
 
     def save_as(self):

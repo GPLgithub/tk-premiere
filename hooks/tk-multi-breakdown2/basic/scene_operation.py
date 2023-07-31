@@ -8,7 +8,6 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
-import os
 import sgtk
 
 HookBaseClass = sgtk.get_hook_baseclass()
@@ -84,6 +83,7 @@ class BreakdownSceneOperations(HookBaseClass):
         self.logger.info("Updating %s" % item)
         node_name = item["node_name"]
         node_type = item["node_type"]
+        self.logger.info("Updating %s (%s)" % (node_name, node_type))
         sg_data = item["sg_data"]
         if not sg_data or not sg_data.get("path", {}).get("local_path", None):
             return False

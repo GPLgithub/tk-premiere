@@ -8,8 +8,7 @@
 import sys
 import sgtk
 
-from .session_info import SessionInfo
-from .project import PremiereProject
+from .premiere import PremiereProject
 
 adobe_bridge = sgtk.platform.import_framework(
     "tk-framework-adobe",

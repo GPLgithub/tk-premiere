@@ -4,8 +4,11 @@
 # agreement provided at the time of installation or download, or which otherwise
 # accompanies this software in either electronic or hard copy form.
 #
+import os
 from enum import IntEnum
+
 import sgtk
+from sgtk.util.filesystem import ensure_folder_exists
 
 
 class ItemType(IntEnum):
@@ -53,15 +56,16 @@ class PremiereItem(object):
     @property
     def node_id(self):
         """
-        Return the internal ID of the Premiere object.
+        Return the internal ID of this Premiere object.
 
         :returns: A string.
         """
         return self._item.nodeId
 
+
 class PremiereProject(PremiereItem):
     """
-    A class to handle Premiere projects
+    A class to handle Premiere projects.
     """
 
     @classmethod
@@ -83,14 +87,17 @@ class PremiereProject(PremiereItem):
         """
         Instantiate a new :class:`PremiereProject` for the given Premiere project.
 
-        :param project: A Premiere project returned by the adobe integration
-                        as a :class:`ProxyWrapper`
+        :param project: A Premiere Project returned by the Adobe integration
+                        as a :class:`ProxyWrapper`.
         """
         super(PremiereProject, self).__init__(project)
 
     @property
     def path(self):
         """
+        Return the path on the filesystem of this project.
+
+        :returns: A string.
         """
         return self._item.path
 
@@ -98,7 +105,11 @@ class PremiereProject(PremiereItem):
     def node_id(self):
         """
         Return the internal ID of the Premiere Project root item.
+
+        :returns: A string.
         """
+        # The Project itself is not a Premiere ProjectItem but its
+        # root item is.
         return self._item.rootItem.nodeId
 
     @property
@@ -125,6 +136,9 @@ class PremiereProject(PremiereItem):
     @property
     def clips(self):
         """
+        Iterate over all clips in this project.
+
+        :yields: :class:`PremiereClip`.
         """
         for bin in self.bins:
             for clip in bin.clips:
@@ -140,7 +154,6 @@ class PremiereProject(PremiereItem):
         for sequence in self._item.sequences:
             yield PremiereTimeline(sequence)
 
-
     def get_clip_by_id(self, node_id):
         """
         Return the clip with the given node id.
@@ -152,12 +165,36 @@ class PremiereProject(PremiereItem):
                 return clip
         return None
 
+    def save(self, path=None):
+        """
+        Save this project in place or to the given path.
+
+        :param str path: Optional, the target file path.
+        :returns: The project's path.
+        """
+
+        if path is None:
+            self._item.save()
+        else:
+            # Premiere won't ensure that the folder is created when saving,
+            # so we must make sure it exists
+            ensure_folder_exists(os.path.dirname(path))
+            self._item.saveAs(path)
+        return self.path
+
+
 class PremiereTimeline(PremiereItem):
     """
     A class to handle Premiere timelines (sequences).
     """
 
     def __init__(self, timeline):
+        """
+        Instantiate a PremiereTimeline.
+
+        :param timeline: A Premiere Sequence object returned by the Adobe integration
+                        as a :class:`ProxyWrapper`.
+        """
         super(PremiereTimeline, self).__init__(timeline)
 
 
@@ -166,12 +203,20 @@ class PremiereBin(PremiereItem):
     A class to handle Premiere bins.
     """
     def __init__(self, bin):
+        """
+        Instantiate a PremiereBin.
+
+        :param bin: A Premiere ProjectItem object returned by the Adobe integration
+                        as a :class:`ProxyWrapper`.
+        """
         super(PremiereBin, self).__init__(bin)
 
     @property
     def clips(self):
         """
         Iterate over all clips in this bin
+
+        :yields: :class:`PremiereClip`.
         """
         # Iterating over childre directly sometimes
         # goes into infinite loops or returns ``None``
@@ -183,11 +228,18 @@ class PremiereBin(PremiereItem):
             if child.type == ItemType.CLIP and not child.isSequence():
                 yield PremiereClip(child)
 
+
 class PremiereClip(PremiereItem):
     """
     A class to handle Premiere clips.
     """
     def __init__(self, clip):
+        """
+        Instantiate a PremiereClip.
+
+        :param bin: A Premiere ProjectItem object returned by the Adobe integration
+                        as a :class:`ProxyWrapper`.
+        """
         super(PremiereClip, self).__init__(clip)
 
     @property
@@ -203,6 +255,8 @@ class PremiereClip(PremiereItem):
     def media_path(self, path):
         """
         Set the media path associated with this clip.
+
+        :param path: File path to the media, as a string.
         """
         if not self._item.canChangeMediaPath():
             raise ValueError("Media path can't be changed on %s" % self.name)

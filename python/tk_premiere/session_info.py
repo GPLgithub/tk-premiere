@@ -5,6 +5,8 @@
 # accompanies this software in either electronic or hard copy form.
 #
 
+# Not used as far as I can tell, just kept in case there is anything
+# interesting in this.
 
 class SessionInfo(object):
     """
