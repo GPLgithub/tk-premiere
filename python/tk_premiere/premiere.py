@@ -87,6 +87,8 @@ class PremiereProject(PremiereItem):
         """
         Instantiate a new :class:`PremiereProject` for the given Premiere project.
 
+        ..see:: https://ppro-scripting.docsforadobe.dev/general/project.html
+
         :param project: A Premiere Project returned by the Adobe integration
                         as a :class:`ProxyWrapper`.
         """
@@ -192,6 +194,8 @@ class PremiereTimeline(PremiereItem):
         """
         Instantiate a PremiereTimeline.
 
+        ..see:: https://ppro-scripting.docsforadobe.dev/sequence/sequence.html
+        
         :param timeline: A Premiere Sequence object returned by the Adobe integration
                         as a :class:`ProxyWrapper`.
         """
@@ -205,6 +209,8 @@ class PremiereBin(PremiereItem):
     def __init__(self, bin):
         """
         Instantiate a PremiereBin.
+
+        ..see:: https://ppro-scripting.docsforadobe.dev/item/projectitem.html
 
         :param bin: A Premiere ProjectItem object returned by the Adobe integration
                         as a :class:`ProxyWrapper`.
@@ -236,6 +242,8 @@ class PremiereClip(PremiereItem):
     def __init__(self, clip):
         """
         Instantiate a PremiereClip.
+
+        ..see:: https://ppro-scripting.docsforadobe.dev/item/projectitem.html
 
         :param bin: A Premiere ProjectItem object returned by the Adobe integration
                         as a :class:`ProxyWrapper`.
