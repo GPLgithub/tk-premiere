@@ -123,7 +123,7 @@ class PremiereProject(PremiereItem):
         bins = [self._item.rootItem]
         while bins:
             bin = bins.pop()
-            # Iterating over childre directly sometimes
+            # Iterating over children directly sometimes
             # goes into infinite loops or returns ``None``
             # results, safer to iterate over the number
             # of children.
@@ -218,7 +218,7 @@ class PremiereBin(PremiereItem):
 
         :yields: :class:`PremiereClip`.
         """
-        # Iterating over childre directly sometimes
+        # Iterating over children directly sometimes
         # goes into infinite loops or returns ``None``
         # results, safer to iterate over the number
         # of children.

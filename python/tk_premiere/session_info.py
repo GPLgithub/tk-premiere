@@ -5,8 +5,9 @@
 # accompanies this software in either electronic or hard copy form.
 #
 
-# Not used as far as I can tell, just kept in case there is anything
-# interesting in this.
+# This module doesn't seem to be used anywhere, it was kept in case there is anything
+# interesting in it.
+
 
 class SessionInfo(object):
     """
