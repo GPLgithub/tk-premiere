@@ -22,7 +22,6 @@ from contextlib import contextmanager
 
 
 import sgtk
-from sgtk.util.filesystem import ensure_folder_exists
 
 
 class PremiereEngine(sgtk.platform.Engine):
@@ -338,16 +337,30 @@ class PremiereEngine(sgtk.platform.Engine):
     # engine host interaction methods
 
     @property
+    def current_project(self):
+        """
+        Return the current Premiere project, if any.
+
+        :returns: A :class:`PremiereProject` or ``None``.
+        """
+        try:
+            payload = self.import_module("tk_premiere")
+            return payload.PremiereProject.get_current_project()
+        except Exception as e:
+            self.logger.exception(e)
+        return None
+
+    @property
     def project_path(self):
         """
         Get the active project filepath.
 
-        :returns: The current project path or an empty string
-        :rtype: str
+        :returns: The current project path or ``None``.
         """
-        if self.adobe.app.project.path[0:4] == '\\\\?\\':
-            return self.adobe.app.project.path[4:]
-        return self.adobe.app.project.path
+        current_project = self.current_project
+        if current_project:
+            return current_project.path
+        return None
 
     def save(self, path=None):
         """
@@ -355,16 +368,11 @@ class PremiereEngine(sgtk.platform.Engine):
 
         :param str path: The target file path. optional.
         """
-
+        if not self.current_project:
+            self.logger.info("No current project, skipping...")
+            return
         with self.context_changes_disabled():
-
-            if path is None:
-                self.adobe.app.project.save()
-            else:
-                # Premiere won't ensure that the folder is created when saving, so we must make sure it exists
-                ensure_folder_exists(os.path.dirname(path))
-                self.adobe.app.project.saveAs(path)
-            new_path = self.project_path
+            new_path = self.current_project.save(path)
             self.logger.info("Saved file to to {!r}".format(new_path))
 
     def save_as(self):
