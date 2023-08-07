@@ -48,19 +48,50 @@ class BreakdownSceneOperations(HookBaseClass):
             if not current_project:
                 self.logger.info("No current project, skipping...")
                 return refs
-            for clip in current_project.clips:
-                refs.append(
-                    {
-                        "node_name": clip.name,
-                        "node_type": "clip",
-                        "path": clip.media_path,
-                        "extra_data": {
-                            # Seems safer to not keep a reference to the clip
-                            # but retrieve it later?
-                            "node_id": clip.node_id,
+            scan_only_current_timeline = self.parent.get_setting(
+                "scan_current_timeline_only", False
+            )
+            if scan_only_current_timeline:
+                current_timeline = current_project.current_timeline
+                if not current_timeline:
+                    self.logger.info("No current timeline, skipping...")
+                    return refs
+                # Clips can be in multiple places, make sure
+                # we include them only once.
+                node_ids = []
+                for track_clip in current_timeline.clips:
+                    clip = track_clip.clip
+                    if clip.node_id in node_ids:
+                        self.logger.debug("Clip %s was already considered" % clip.node_id)
+                    else:
+                        refs.append(
+                            {
+                                "node_name": clip.name,
+                                "node_type": "clip",
+                                "path": clip.media_path,
+                                "extra_data": {
+                                    # Seems safer to not keep a reference to the clip
+                                    # but retrieve it later?
+                                    "node_id": clip.node_id,
+                                }
+                            }
+                        )
+                        node_ids.append(clip.node_id)
+            else:
+                # Scan all clips in all bins
+                for clip in current_project.clips:
+                    refs.append(
+                        {
+                            "node_name": clip.name,
+                            "node_type": "clip",
+                            "path": clip.media_path,
+                            "extra_data": {
+                                # Seems safer to not keep a reference to the clip
+                                # but retrieve it later?
+                                "node_id": clip.node_id,
+                            }
                         }
-                    }
-                )
+                    )
             self.logger.info("Refs found: %s" % refs)
             return refs
         except Exception as e:
