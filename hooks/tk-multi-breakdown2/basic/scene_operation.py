@@ -16,6 +16,10 @@ HookBaseClass = sgtk.get_hook_baseclass()
 class BreakdownSceneOperations(HookBaseClass):
     """
     Breakdown operations for Adode Premiere.
+
+    The scan_current_timeline_only setting can set to `True` in the breakdown app
+    configuration to only check clips from the current timeline (sequences) instead
+    of checking all clips in the current project.
     """
 
     def scan_scene(self):
