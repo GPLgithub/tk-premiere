@@ -156,6 +156,18 @@ class PremiereProject(PremiereItem):
         for sequence in self._item.sequences:
             yield PremiereTimeline(sequence)
 
+    @property
+    def current_timeline(self):
+        """
+        Return the active timeline for this project, if there is one.
+
+        :returns: A :class:`PremiereTimeline` or ``None``.
+        """
+        sequence = self._item.activeSequence
+        if sequence:
+            return PremiereTimeline(sequence)
+        return None
+
     def get_clip_by_id(self, node_id):
         """
         Return the clip with the given node id.
@@ -200,6 +212,127 @@ class PremiereTimeline(PremiereItem):
                         as a :class:`ProxyWrapper`.
         """
         super(PremiereTimeline, self).__init__(timeline)
+
+    @property
+    def node_id(self):
+        """
+        Return the internal ID of the Premiere Sequence project item.
+
+        :returns: A string.
+        """
+        # The Project itself is not a Premiere ProjectItem but its
+        # root item is.
+        return self._item.projectItem.nodeId
+
+    @property
+    def video_tracks(self):
+        """
+        Iterate over all video tracks within this timeline.
+
+        :yields: :class:`PremiereTrack` instances.
+        """
+        # Iterating over tracks directly sometimes
+        # goes into infinite loops or returns ``None``
+        # results, safer to iterate over the number
+        # of tracks.
+        for i in range(self._item.videoTracks.numTracks):
+            track = self._item.videoTracks[i]
+            yield PremiereTrack(track)
+
+    @property
+    def audio_tracks(self):
+        """
+        Iterate over  all audio tracks within this timeline.
+
+        :yields: :class:`PremiereTrack` instances.
+        """
+        # Iterating over tracks directly sometimes
+        # goes into infinite loops or returns ``None``
+        # results, safer to iterate over the number
+        # of tracks.
+        for i in range(self._item.audioTracks.numTracks):
+            track = self._item.audioTracks[i]
+            yield PremiereTrack(track)
+
+    @property
+    def tracks(self):
+        """
+        Iterate over tracks within this timeline.
+
+        :yields: :class:`PremiereTrack` instances.
+        """
+        for track in self.video_tracks:
+            yield track
+        for track in self.audio_tracks:
+            yield track
+
+    @property
+    def clips(self):
+        """
+        Iterate over all clips from all tracks in this timeline.
+
+        :yields: :class:`PremiereTrackClip` instances.
+        """
+        for track in self.tracks:
+            for clip in track.clips:
+                yield clip
+
+
+class PremiereTrack(PremiereItem):
+    """
+    A class to handle Premiere Tracks.
+    """
+    def __init__(self, track):
+        """
+        Instantiate a PremiereTrack.
+
+        ..see:: https://ppro-scripting.docsforadobe.dev/sequence/track.html#track
+
+        :param track: A Premiere Track object returned by the Adobe integration
+                        as a :class:`ProxyWrapper`.
+        """
+        super(PremiereTrack, self).__init__(track)
+
+    @property
+    def clips(self):
+        """
+        Iterate over all clips in this track.
+
+        :yields: :class:`PremiereTrackClip` instances.
+        """
+        # Iterating over clips directly sometimes
+        # goes into infinite loops or returns ``None``
+        # results, safer to iterate over the number
+        # of clips.
+        for i in range(self._item.clips.numItems):
+            clip = self._item.clips[i]
+            yield PremiereTrackClip(clip)
+
+
+class PremiereTrackClip(PremiereItem):
+    """
+    A class to handle Premiere Tracks Clips.
+    """
+    def __init__(self, track_item):
+        """
+        Instantiate a PremiereTrackClip.
+
+        ..see:: https://ppro-scripting.docsforadobe.dev/item/trackitem.html
+
+        :param clip: A Premiere TrackItem object returned by the Adobe integration
+                        as a :class:`ProxyWrapper`.
+        """
+        super(PremiereTrackClip, self).__init__(track_item)
+        self._clip = PremiereClip(self._item.projectItem)
+
+    @property
+    def clip(self):
+        """
+        Return the clip providing media for this track clip.
+
+        :returns: A :class:`PremiereClip` instance.
+        """
+        return self._clip
 
 
 class PremiereBin(PremiereItem):
