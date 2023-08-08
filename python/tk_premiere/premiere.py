@@ -251,7 +251,7 @@ class PremiereTimeline(PremiereItem):
         # results, safer to iterate over the number
         # of tracks.
         for i in range(self._item.audioTracks.numTracks):
-            track = self._item.videoTracks[i]
+            track = self._item.audioTracks[i]
             yield PremiereTrack(track)
 
     @property
