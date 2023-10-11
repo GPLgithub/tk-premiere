@@ -214,6 +214,22 @@ class PremiereProject(PremiereItem):
         top_bin = self._item.rootItem
         return PremiereBin(top_bin).ensure_bin(name)
 
+    def ensure_bins_for_path(self, path):
+        """
+        Ensure that bins exists for the given path.
+
+        :param str path: A bins path, with / as separators.
+        :returns: A :class:`PremiereBin`.
+        :raises ValueError: For invalid paths.
+        """
+        parts = [p for p in path.split("/") if p]  # Skip leading, ending and consecutive /
+        if not parts:
+            raise ValueError("Invalid import bin path %s" % path)
+        current_bin = self.ensure_bin(parts[0])
+        for part in parts[1:]:
+            current_bin = current_bin.ensure_bin(part)
+        return current_bin
+
     def save(self, path=None):
         """
         Save this project in place or to the given path.

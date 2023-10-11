@@ -131,15 +131,16 @@ class BreakdownSceneOperations(HookBaseClass):
             import_in_bin_template = self.parent.get_template("import_in_bin_template")
             if import_in_bin_template:
                 import_bin_path = import_in_bin_template.apply_fields(sg_data)
-                self.logger.info("Resolved import bin path to %s from %s with %s" % (import_bin_path, import_in_bin_template, sg_data))
-                parts = [p for p in import_bin_path.split("/") if p]  # Skip leading, ending and consecutive /
-                if not parts:
-                    self.logger.error("Invalid import bin path %s" % import_bin_path)
-                current_bin = current_project.ensure_bin(parts[0])
-                for part in parts[1:]:
-                    current_bin = current_bin.ensure_bin(part)
+                self.logger.debug("Resolved import bin path to %s from %s with %s" % (import_bin_path, import_in_bin_template, sg_data))
+                current_bin = current_project.ensure_bins_for_path(import_bin_path)
                 current_bin.create_clip_from_media(path)
             else:
+                # None is returned by get_template if the template can't be found, check if the setting was
+                # set to report the problem
+                template_setting = self.parent.get_setting("import_in_bin_template")
+                if template_setting:
+                    self.logger.error("Invalid template setting %s" % template_setting)
+                    return False
                 # For now just update the path in place.
                 clip = current_project.get_clip_by_id(node_id)
                 if not clip:
