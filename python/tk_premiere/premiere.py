@@ -179,6 +179,34 @@ class PremiereProject(PremiereItem):
                 return clip
         return None
 
+    def get_bin_by_name(self, name):
+        """
+        Return the bin with the given name from the project root, if any.
+
+        :returns: A :class:`PremiereBin` or ``None``.
+        """
+        return PremiereBin(self._item.rootItem).get_bin_by_name(name)
+
+    def create_bin(self, path):
+        """
+        Create a bin with the current name under the project root bin.
+
+        :param str name: The bin name to create.
+        :returns: A :class:`PremiereBin`.
+        """
+        top_bin = self._item.rootItem
+        return PremiereBin(top_bin.createBin(name))
+
+    def ensure_bin(self, name):
+        """
+        Ensure that a bin with the given name exists under the project root bin.
+
+        :param str name: The name of the bin.
+        :returns: A :class:`PremiereBin`.
+        """
+        top_bin = self._item.rootItem
+        return PremiereBin(top_bin).ensure_bin(name)
+
     def save(self, path=None):
         """
         Save this project in place or to the given path.
@@ -366,6 +394,40 @@ class PremiereBin(PremiereItem):
             # Sequences are clips as well.
             if child.type == ItemType.CLIP and not child.isSequence():
                 yield PremiereClip(child)
+
+    def get_bin_by_name(self, name):
+        """
+        Return the bin with the given name in this bin, if any.
+
+        :returns: A :class:`PremiereBin` or ``None``.
+        """
+        for i in range(self._item.children.numItems):
+            child = self._item.children[i]
+            if child and child.type == ItemType.BIN:
+                if child.name == name:
+                    return PremiereBin(child)
+        return None
+
+    def create_bin(self, name):
+        """
+        Create a bin with the current name under this bin.
+
+        :param str name: The name of the new bin.
+        :returns: A :class:`PremiereBin`.
+        """
+        return PremiereBin(self._item.createBin(name))
+
+    def ensure_bin(self, name):
+        """
+        Ensure that a bin with the given name exists under this bin.
+
+        :param str name: The name of the bin.
+        :returns: A :class:`PremiereBin`.
+        """
+        bin = self.get_bin_by_name(name)
+        if not bin:
+            bin = self.create_bin(name)
+        return bin
 
 
 class PremiereClip(PremiereItem):
