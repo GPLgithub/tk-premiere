@@ -53,6 +53,13 @@ class PremiereItem(object):
         """
         return self._item.name
 
+    @name.setter
+    def name(self, name):
+        """
+        Set the name of this item
+        """
+        self._item.name = name
+
     @property
     def node_id(self):
         """
@@ -178,6 +185,50 @@ class PremiereProject(PremiereItem):
             if clip.node_id == node_id:
                 return clip
         return None
+
+    def get_bin_by_name(self, name):
+        """
+        Return the bin with the given name from the project root, if any.
+
+        :returns: A :class:`PremiereBin` or ``None``.
+        """
+        return PremiereBin(self._item.rootItem).get_bin_by_name(name)
+
+    def create_bin(self, name):
+        """
+        Create a bin with the current name under the project root bin.
+
+        :param str name: The bin name to create.
+        :returns: A :class:`PremiereBin`.
+        """
+        top_bin = self._item.rootItem
+        return PremiereBin(top_bin.createBin(name))
+
+    def ensure_bin(self, name):
+        """
+        Ensure that a bin with the given name exists under the project root bin.
+
+        :param str name: The name of the bin.
+        :returns: A :class:`PremiereBin`.
+        """
+        top_bin = self._item.rootItem
+        return PremiereBin(top_bin).ensure_bin(name)
+
+    def ensure_bins_for_path(self, path):
+        """
+        Ensure that bins exists for the given path.
+
+        :param str path: A bins path, with / as separators.
+        :returns: A :class:`PremiereBin`.
+        :raises ValueError: For invalid paths.
+        """
+        parts = [p for p in path.split("/") if p]  # Skip leading, ending and consecutive /
+        if not parts:
+            raise ValueError("Invalid import bin path %s" % path)
+        current_bin = self.ensure_bin(parts[0])
+        for part in parts[1:]:
+            current_bin = current_bin.ensure_bin(part)
+        return current_bin
 
     def save(self, path=None):
         """
@@ -367,6 +418,67 @@ class PremiereBin(PremiereItem):
             if child.type == ItemType.CLIP and not child.isSequence():
                 yield PremiereClip(child)
 
+    def get_bin_by_name(self, name):
+        """
+        Return the bin with the given name in this bin, if any.
+
+        :returns: A :class:`PremiereBin` or ``None``.
+        """
+        for i in range(self._item.children.numItems):
+            child = self._item.children[i]
+            if child and child.type == ItemType.BIN:
+                if child.name == name:
+                    return PremiereBin(child)
+        return None
+
+    def create_bin(self, name):
+        """
+        Create a bin with the current name under this bin.
+
+        :param str name: The name of the new bin.
+        :returns: A :class:`PremiereBin`.
+        """
+        return PremiereBin(self._item.createBin(name))
+
+    def ensure_bin(self, name):
+        """
+        Ensure that a bin with the given name exists under this bin.
+
+        :param str name: The name of the bin.
+        :returns: A :class:`PremiereBin`.
+        """
+        bin = self.get_bin_by_name(name)
+        if not bin:
+            bin = self.create_bin(name)
+        return bin
+
+    def create_clip_from_media(self, media_path):
+        """
+        Create a clip for the given media file in this bin.
+
+        :param str media_path: Full path to the media file.
+        :returns: A :class:`PremiereClip`, the created clip.
+        :raises ValueError: If the clip was not created.
+        """
+        engine = sgtk.platform.current_engine()
+        # We can't really rely on importFiles returned value
+        # so we count items before doing the import to check
+        # if something was added.
+        old_count = self._item.children.numItems
+        engine.adobe.app.project.importFiles(
+            [media_path],
+            False,
+            self._item,
+            False
+        )
+        if old_count == self._item.children.numItems:
+            raise ValueError("Unable to create a clip for %s" % media_path)
+        # Assuming here that the new child is added at the end.
+        last = self._item.children[self._item.children.numItems - 1]
+        if not last or last.type != ItemType.CLIP:
+            raise ValueError("Unable to retrieve the created clip for %s" % media_path)
+        return PremiereClip(last)
+
 
 class PremiereClip(PremiereItem):
     """
@@ -378,7 +490,7 @@ class PremiereClip(PremiereItem):
 
         ..see:: https://ppro-scripting.docsforadobe.dev/item/projectitem.html
 
-        :param bin: A Premiere ProjectItem object returned by the Adobe integration
+        :param clip: A Premiere ProjectItem object returned by the Adobe integration
                         as a :class:`ProxyWrapper`.
         """
         super(PremiereClip, self).__init__(clip)

@@ -121,16 +121,34 @@ class BreakdownSceneOperations(HookBaseClass):
         self.logger.info("Updating %s (%s)" % (node_name, node_type))
         sg_data = item["sg_data"]
         if not sg_data or not sg_data.get("path", {}).get("local_path", None):
+            self.logger.warning("Invalid SG data %s, not updating" % sg_data)
             return False
-        path = sg_data["path"]["local_path"]
-        node_id = item["extra_data"]["node_id"]
-        engine = self.parent.engine
-        current_project = engine.current_project
-        # For now just update the path in place.
-        clip = current_project.get_clip_by_id(node_id)
-        if not clip:
-            self.logger.warning("Unable to retrieve a clip with id %s" % node_id)
+        try:
+            path = sg_data["path"]["local_path"]
+            node_id = item["extra_data"]["node_id"]
+            engine = self.parent.engine
+            current_project = engine.current_project
+            import_in_bin_template = self.parent.get_template("import_in_bin_template")
+            if import_in_bin_template:
+                import_bin_path = import_in_bin_template.apply_fields(sg_data)
+                self.logger.debug("Resolved import bin path to %s from %s with %s" % (import_bin_path, import_in_bin_template, sg_data))
+                current_bin = current_project.ensure_bins_for_path(import_bin_path)
+                current_bin.create_clip_from_media(path)
+            else:
+                # None is returned by get_template if the template can't be found, check if the setting was
+                # set to report the problem
+                template_setting = self.parent.get_setting("import_in_bin_template")
+                if template_setting:
+                    self.logger.error("Invalid template setting %s" % template_setting)
+                    return False
+                # For now just update the path in place.
+                clip = current_project.get_clip_by_id(node_id)
+                if not clip:
+                    self.logger.warning("Unable to retrieve a clip with id %s" % node_id)
+                    return False
+                clip.media_path = path
+        except Exception as e:
+            self.logger.exception("Unable to update %s: %s" % (item, e))
             return False
-        clip.media_path = path
         self.logger.info("%s updated with %s" % (clip, path))
         return path
