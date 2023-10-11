@@ -53,6 +53,13 @@ class PremiereItem(object):
         """
         return self._item.name
 
+    @name.setter
+    def name(self, name):
+        """
+        Set the name of this item
+        """
+        self._item.name = name
+
     @property
     def node_id(self):
         """
@@ -187,7 +194,7 @@ class PremiereProject(PremiereItem):
         """
         return PremiereBin(self._item.rootItem).get_bin_by_name(name)
 
-    def create_bin(self, path):
+    def create_bin(self, name):
         """
         Create a bin with the current name under the project root bin.
 
@@ -429,6 +436,33 @@ class PremiereBin(PremiereItem):
             bin = self.create_bin(name)
         return bin
 
+    def create_clip_from_media(self, media_path):
+        """
+        Create a clip for the given media file in this bin.
+
+        :param str media_path: Full path to the media file.
+        :returns: A :class:`PremiereClip`, the created clip.
+        :raises ValueError: If the clip was not created.
+        """
+        engine = sgtk.platform.current_engine()
+        # We can't really rely on importFiles returned value
+        # so we count items before doing the import to check
+        # if something was added.
+        old_count = self._item.children.numItems
+        engine.adobe.app.project.importFiles(
+            [media_path],
+            False,
+            self._item,
+            False
+        )
+        if old_count == self._item.children.numItems:
+            raise ValueError("Unable to create a clip for %s" % media_path)
+        # Assuming here that the new child is added at the end.
+        last = self._item.children[self._item.children.numItems - 1]
+        if not last or last.type != ItemType.CLIP:
+            raise ValueError("Unable to retrieve the created clip for %s" % media_path)
+        return PremiereClip(last)
+
 
 class PremiereClip(PremiereItem):
     """
@@ -440,7 +474,7 @@ class PremiereClip(PremiereItem):
 
         ..see:: https://ppro-scripting.docsforadobe.dev/item/projectitem.html
 
-        :param bin: A Premiere ProjectItem object returned by the Adobe integration
+        :param clip: A Premiere ProjectItem object returned by the Adobe integration
                         as a :class:`ProxyWrapper`.
         """
         super(PremiereClip, self).__init__(clip)
