@@ -148,7 +148,7 @@ class BreakdownSceneOperations(HookBaseClass):
                     return False
                 clip.media_path = path
         except Exception as e:
-            self.logger.exception("Unable to update %s" % item)
+            self.logger.exception("Unable to update %s: %s" % (item, e))
             return False
         self.logger.info("%s updated with %s" % (clip, path))
         return path
