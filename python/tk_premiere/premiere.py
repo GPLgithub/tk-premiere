@@ -186,6 +186,15 @@ class PremiereProject(PremiereItem):
                 return clip
         return None
 
+    def get_insertion_bin(self):
+        """
+        Return the insertion bin for this project.
+        https://ppro-scripting.docsforadobe.dev/general/project.html#project-getinsertionbin
+
+        :returns: A :class:`PremiereBin`.
+        """
+        return PremiereBin(self._item.getInsertionBin())
+
     def get_bin_by_name(self, name):
         """
         Return the bin with the given name from the project root, if any.

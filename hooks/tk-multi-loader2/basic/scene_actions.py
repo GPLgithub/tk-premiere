@@ -161,18 +161,18 @@ class PremiereActions(HookBaseClass):
                 self._import(path, is_sequence, sg_publish_data)
             except Exception as e:
                 self.logger.exception("Unable to import %s: %s" % (path, e))
+                raise
 
     ###########################################################################
     # helper methods
 
     def _import(self, path, is_sequence, sg_data):
         """
-        Helper method to add the footage described by path to a comp
+        Helper method to add the footage described by path to a comp.
 
-        :param path: Path to the footage to add
-        :param is_sequence: Whether the footage is a sequence
-        :param sg_data: SG dictionary.
-        :returns:
+        :param path: Path to the footage to add.
+        :param is_sequence: Whether the footage is a sequence.
+        :param sg_data: A SG Published File dictionary.
         """
         engine = self.parent.engine
         current_project = engine.current_project
@@ -189,6 +189,5 @@ class PremiereActions(HookBaseClass):
             template_setting = self.parent.get_setting("import_in_bin_template")
             if template_setting:
                 raise ValueError("Invalid template setting %s" % template_setting)
-            insertion_bin = current_project.getInsertionBin()
-            paths = [path.replace(os.path.sep, '/')]
-            current_project.importFiles(paths, 0, insertion_bin, is_sequence)
+            current_bin = current_project.get_insertion_bin()
+            current_bin.create_clip_from_media(path)
