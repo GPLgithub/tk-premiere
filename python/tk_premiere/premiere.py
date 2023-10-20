@@ -73,38 +73,52 @@ class PremiereItem(object):
     def get_meta_data(self, property):
         """
         Return the meta data value for the given property.
+
+        :param property: A meta data property name, like 'myproperty' or 'Column.PropertyBool.Hide' for
+                         standard meta data properties.
+        :returns: The meta data value or ``None``.
         """
         meta_data = self.item.getProjectMetadata()
-        # We something like:
-        #<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
-        #<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.1-c000 79.b0f8be9, 2021/12/08-19:11:22        ">
-        #   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-        #      <rdf:Description rdf:about=""
-        #            xmlns:premierePrivateProjectMetaData="http://ns.adobe.com/premierePrivateProjectMetaData/1.0/">
-        #         <premierePrivateProjectMetaData:Column.Intrinsic.Name>blah</premierePrivateProjectMetaData:Column.Intrinsic.Name>
-        #         <premierePrivateProjectMetaData:Column.PropertyText.Label>BE.Prefs.LabelColors.7</premierePrivateProjectMetaData:Column.PropertyText.Label>
-        #         <premierePrivateProjectMetaData:Column.Intrinsic.MediaType>Bin</premierePrivateProjectMetaData:Column.Intrinsic.MediaType>
-        #         <premierePrivateProjectMetaData:Column.PropertyBool.Good>True</premierePrivateProjectMetaData:Column.PropertyBool.Good>
-        #         <premierePrivateProjectMetaData:Column.PropertyBool.Hide>False</premierePrivateProjectMetaData:Column.PropertyBool.Hide>
-        #         <premierePrivateProjectMetaData:Column.PropertyBool.PropagatedHide>False</premierePrivateProjectMetaData:Column.PropertyBool.PropagatedHide>
-        #         <premierePrivateProjectMetaData:myprop>test</premierePrivateProjectMetaData:myprop>
-        #      </rdf:Description>
-        #   </rdf:RDF>
-        #</x:xmpmeta>
-        #<?xpacket end="w"?>
+        # We get something like, with only for properties which have been set:
+        # <?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+        # <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.1-c000 79.b0f8be9, 2021/12/08-19:11:22        ">
+        #    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+        #       <rdf:Description rdf:about=""
+        #             xmlns:premierePrivateProjectMetaData="http://ns.adobe.com/premierePrivateProjectMetaData/1.0/">
+        #          <premierePrivateProjectMetaData:Column.Intrinsic.Name>blah</premierePrivateProjectMetaData:Column.Intrinsic.Name>
+        #          <premierePrivateProjectMetaData:Column.PropertyText.Label>BE.Prefs.LabelColors.7</premierePrivateProjectMetaData:Column.PropertyText.Label>
+        #          <premierePrivateProjectMetaData:Column.Intrinsic.MediaType>Bin</premierePrivateProjectMetaData:Column.Intrinsic.MediaType>
+        #          <premierePrivateProjectMetaData:Column.PropertyBool.Good>True</premierePrivateProjectMetaData:Column.PropertyBool.Good>
+        #          <premierePrivateProjectMetaData:Column.PropertyBool.Hide>False</premierePrivateProjectMetaData:Column.PropertyBool.Hide>
+        #          <premierePrivateProjectMetaData:Column.PropertyBool.PropagatedHide>False</premierePrivateProjectMetaData:Column.PropertyBool.PropagatedHide>
+        #          <premierePrivateProjectMetaData:myprop>test</premierePrivateProjectMetaData:myprop>
+        #       </rdf:Description>
+        #    </rdf:RDF>
+        # </x:xmpmeta>
+        # <?xpacket end="w"?>
         m = re.search(
             r"<premierePrivateProjectMetaData:%s>(.*)</premierePrivateProjectMetaData:%s>" % (property, property),
             meta_data
         )
         if not m:
-            raise ValueError("Unknown property %s" % property)
+            # Since we don't get entries for properties which have not been set
+            # we can't know if the property exists or not, or is empty.
+            # So we return None for the time being...
+            return None
         return m.group(1)
 
     def set_meta_data(self, property, value):
         """
         Set the meta data value for the given property.
+
+        :param property: A meta data property name, like 'myproperty' or 'Column.PropertyBool.Hide' for
+                         standard meta data properties.
+        :param value: The value to set.
+        :returns: The value which was actually set.
         """
         meta_data = self.item.getProjectMetadata()
+        # Since we pass the name of the property to set, we can just replace any property entry in
+        # the meta data string with what we want to set.
         repl = re.sub(
             r"<premierePrivateProjectMetaData:[^<]+>(.*)</premierePrivateProjectMetaData:.*>",
             r"<premierePrivateProjectMetaData:%s>%s</premierePrivateProjectMetaData:%s>" % (property, value, property),
@@ -285,6 +299,16 @@ class PremiereProject(PremiereItem):
 
     def add_meta_data_property(self, name, display_name, property_type):
         """
+        Add a property with the given name to the meta data schema.
+
+        .. note:: It is not possible to retrieve the meta data schema so the
+                  property is blinded added to the schema. Conflicts with
+                  existing properties do not cause errors, but their display
+                  name or type is not changed if differents.
+
+        :param str name: The name for the property, which acts as its indentifier.
+        :param str display_name: The display name for the property, which will be displayed in UIs.
+        :param str property_type: The type for the property, e.g. "int", "float", "string", "bool".
         """
         value_type = {
             "int": 0,
