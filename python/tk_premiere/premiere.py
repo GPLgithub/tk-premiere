@@ -4,8 +4,9 @@
 # agreement provided at the time of installation or download, or which otherwise
 # accompanies this software in either electronic or hard copy form.
 #
-import os
 from enum import IntEnum
+import os
+import re
 
 import sgtk
 from sgtk.util.filesystem import ensure_folder_exists
@@ -69,6 +70,49 @@ class PremiereItem(object):
         """
         return self._item.nodeId
 
+    def get_meta_data(self, property):
+        """
+        Return the meta data value for the given property.
+        """
+        meta_data = self.item.getProjectMetadata()
+        # We something like:
+        #<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+        #<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.1-c000 79.b0f8be9, 2021/12/08-19:11:22        ">
+        #   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+        #      <rdf:Description rdf:about=""
+        #            xmlns:premierePrivateProjectMetaData="http://ns.adobe.com/premierePrivateProjectMetaData/1.0/">
+        #         <premierePrivateProjectMetaData:Column.Intrinsic.Name>blah</premierePrivateProjectMetaData:Column.Intrinsic.Name>
+        #         <premierePrivateProjectMetaData:Column.PropertyText.Label>BE.Prefs.LabelColors.7</premierePrivateProjectMetaData:Column.PropertyText.Label>
+        #         <premierePrivateProjectMetaData:Column.Intrinsic.MediaType>Bin</premierePrivateProjectMetaData:Column.Intrinsic.MediaType>
+        #         <premierePrivateProjectMetaData:Column.PropertyBool.Good>True</premierePrivateProjectMetaData:Column.PropertyBool.Good>
+        #         <premierePrivateProjectMetaData:Column.PropertyBool.Hide>False</premierePrivateProjectMetaData:Column.PropertyBool.Hide>
+        #         <premierePrivateProjectMetaData:Column.PropertyBool.PropagatedHide>False</premierePrivateProjectMetaData:Column.PropertyBool.PropagatedHide>
+        #         <premierePrivateProjectMetaData:myprop>test</premierePrivateProjectMetaData:myprop>
+        #      </rdf:Description>
+        #   </rdf:RDF>
+        #</x:xmpmeta>
+        #<?xpacket end="w"?>
+        m = re.search(
+            r"<premierePrivateProjectMetaData:%s>(.*)</premierePrivateProjectMetaData:%s>" % (property, property),
+            meta_data
+        )
+        if not m:
+            raise ValueError("Unknown property %s" % property)
+        return m.group(1)
+
+    def set_meta_data(self, property, value):
+        """
+        Set the meta data value for the given property.
+        """
+        meta_data = self.item.getProjectMetadata()
+        repl = re.sub(
+            r"<premierePrivateProjectMetaData:[^<]+>(.*)</premierePrivateProjectMetaData:.*>",
+            r"<premierePrivateProjectMetaData:%s>%s</premierePrivateProjectMetaData:%s>" % (property, value, property),
+            meta_data,
+            1
+        )
+        self.item.setProjectMetadata(repl, [property])
+        return self.get_meta_data(property)
 
 class PremiereProject(PremiereItem):
     """
@@ -238,6 +282,28 @@ class PremiereProject(PremiereItem):
         for part in parts[1:]:
             current_bin = current_bin.ensure_bin(part)
         return current_bin
+
+    def add_meta_data_property(self, name, display_name, property_type):
+        """
+        """
+        value_type = {
+            "int": 0,
+            "integer": 0,
+            "real": 1,
+            "float": 1,
+            "str": 2,
+            "string": 2,
+            "bool": 3,
+            "boolean": 3,
+        }.get(property_type.lower())
+
+        if value_type is None:
+            raise ValueError("Unsupported property type %s" % property_type)
+        return self.item.addPropertyToProjectMetadataSchema(
+            name,
+            display_name,
+            value_type
+        )
 
     def save(self, path=None):
         """
