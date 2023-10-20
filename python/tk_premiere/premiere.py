@@ -128,6 +128,7 @@ class PremiereItem(object):
         self.item.setProjectMetadata(repl, [property])
         return self.get_meta_data(property)
 
+
 class PremiereProject(PremiereItem):
     """
     A class to handle Premiere projects.
