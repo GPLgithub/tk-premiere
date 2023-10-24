@@ -79,7 +79,7 @@ class PremiereItem(object):
         :returns: The meta data value or ``None``.
         """
         meta_data = self.item.getProjectMetadata()
-        # We get something like, with only for properties which have been set:
+        # We get something like this, with tags only for properties which have been set:
         # <?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
         # <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.1-c000 79.b0f8be9, 2021/12/08-19:11:22        ">
         #    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -303,7 +303,7 @@ class PremiereProject(PremiereItem):
         Add a property with the given name to the meta data schema.
 
         .. note:: It is not possible to retrieve the meta data schema so the
-                  property is blinded added to the schema. Conflicts with
+                  property is blindly added to the schema. Conflicts with
                   existing properties do not cause errors, but their display
                   name or type is not changed if differents.
 
