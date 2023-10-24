@@ -117,14 +117,23 @@ class PremiereItem(object):
         :returns: The value which was actually set.
         """
         meta_data = self.item.getProjectMetadata()
-        # Since we pass the name of the property to set, we can just replace any property entry in
-        # the meta data string with what we want to set.
+        # Check if the property is present in the meta data and replace its value
         repl = re.sub(
-            r"<premierePrivateProjectMetaData:[^<]+>(.*)</premierePrivateProjectMetaData:.*>",
+            r"<premierePrivateProjectMetaData:%s>(.*)</premierePrivateProjectMetaData:%s>" % (property, property),
             r"<premierePrivateProjectMetaData:%s>%s</premierePrivateProjectMetaData:%s>" % (property, value, property),
             meta_data,
-            1
         )
+        if repl == meta_data:
+            # If we didn't find the property, add it to the meta data.
+            # Since we pass the name of the property to set, we can just replace any property entry in
+            # the meta data string with what we want to set.
+            repl = re.sub(
+                r"<premierePrivateProjectMetaData:[^<]+>(.*)</premierePrivateProjectMetaData:.*>",
+                r"<premierePrivateProjectMetaData:%s>%s</premierePrivateProjectMetaData:%s>" % (property, value, property),
+                meta_data,
+                1
+            )
+        # https://ppro-scripting.docsforadobe.dev/item/projectitem.html#projectitem-setprojectmetadata
         self.item.setProjectMetadata(repl, [property])
         return self.get_meta_data(property)
 
