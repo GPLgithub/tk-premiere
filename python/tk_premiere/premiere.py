@@ -314,7 +314,7 @@ class PremiereProject(PremiereItem):
         .. note:: It is not possible to retrieve the meta data schema so the
                   property is blindly added to the schema. Conflicts with
                   existing properties do not cause errors, but their display
-                  name or type is not changed if differents.
+                  name or type is not changed if different.
 
         :param str name: The name for the property, which acts as its indentifier.
         :param str display_name: The display name for the property, which will be displayed in UIs.
