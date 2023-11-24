@@ -8,6 +8,7 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
+from datetime import datetime
 import sgtk
 
 HookBaseClass = sgtk.get_hook_baseclass()
@@ -115,6 +116,7 @@ class BreakdownSceneOperations(HookBaseClass):
         :returns: The path the item was set to, ``False`` if no update was done.
         """
 
+        start = datetime.now()
         self.logger.info("Updating %s" % item)
         node_name = item["node_name"]
         node_type = item["node_type"]
@@ -124,6 +126,7 @@ class BreakdownSceneOperations(HookBaseClass):
             self.logger.warning("Invalid SG data %s, not updating" % sg_data)
             return False
         try:
+            clip = None
             path = sg_data["path"]["local_path"]
             node_id = item["extra_data"]["node_id"]
             engine = self.parent.engine
@@ -133,7 +136,7 @@ class BreakdownSceneOperations(HookBaseClass):
                 import_bin_path = import_in_bin_template.apply_fields(sg_data)
                 self.logger.debug("Resolved import bin path to %s from %s with %s" % (import_bin_path, import_in_bin_template, sg_data))
                 current_bin = current_project.ensure_bins_for_path(import_bin_path)
-                current_bin.create_clip_from_media(path)
+                clip = current_bin.create_clip_from_media(path)
             else:
                 # None is returned by get_template if the template can't be found, check if the setting was
                 # set to report the problem
@@ -150,5 +153,6 @@ class BreakdownSceneOperations(HookBaseClass):
         except Exception as e:
             self.logger.exception("Unable to update %s: %s" % (item, e))
             return False
-        self.logger.info("%s updated with %s" % (clip, path))
+        ellapsed = datetime.now() - start
+        self.logger.info("%s updated with %s in %s seconds" % (clip, path, ellapsed.total_seconds()))
         return path
