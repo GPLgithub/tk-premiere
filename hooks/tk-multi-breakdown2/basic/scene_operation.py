@@ -8,6 +8,7 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
+from datetime import datetime
 import sgtk
 
 HookBaseClass = sgtk.get_hook_baseclass()
@@ -114,7 +115,7 @@ class BreakdownSceneOperations(HookBaseClass):
                      updated *to* rather than the current Published File.
         :returns: The path the item was set to, ``False`` if no update was done.
         """
-
+        start = datetime.now()
         self.logger.info("Updating %s" % item)
         node_name = item["node_name"]
         node_type = item["node_type"]
@@ -152,4 +153,6 @@ class BreakdownSceneOperations(HookBaseClass):
         except Exception as e:
             self.logger.exception("Unable to update %s: %s" % (item, e))
             return False
+        elapsed = datetime.now() - start
+        self.logger.info("Updated %s in %s seconds" % (item, elapsed.total_seconds()))
         return path
