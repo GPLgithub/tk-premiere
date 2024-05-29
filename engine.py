@@ -992,7 +992,7 @@ class PremiereEngine(sgtk.platform.Engine):
         """
         if not self._WIN32_AFTEREFFECTS_MAIN_HWND:
             for major in sorted(self.__CC_VERSION_MAPPING.keys()):
-                for minor in six.range(10):
+                for minor in range(10):
                     found_hwnds = self.__tk_premiere.win_32_api.find_windows(
                         class_name="Premiere Pro",
                         stop_if_found=True,
