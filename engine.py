@@ -936,6 +936,7 @@ class PremiereEngine(sgtk.platform.Engine):
                     stdout=subprocess.PIPE
                 )
                 out_string, _ = pid_query_process.communicate()
+                out_string = out_string.decode("utf-8")
 
                 # The out_string will look like:
                 # "AfterFX.ext","1234","SessionName","SessionNum","MemoryUsage"
